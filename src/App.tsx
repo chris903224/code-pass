@@ -1,0 +1,260 @@
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { useAuth } from './hooks/useAuth';
+
+// ============================================================
+// PAGES
+// ============================================================
+import LoginPage from './pages/LoginPage';
+import ProfilePage from './pages/ProfilePage';
+import SettingsPage from './pages/SettingsPage';
+import HelpPage from './pages/HelpPage';
+import NotificationsPage from './pages/NotificationsPage';
+
+// ============================================================
+// ADMIN COMPONENTS
+// ============================================================
+import AdminDashboard from './components/admin/AdminDashboard';
+import AdminDepartments from './components/admin/AdminDepartments';
+import AdminStudents from './components/admin/AdminStudents';
+import AdminReports from './components/admin/AdminReports';
+
+// ============================================================
+// DEPARTMENT COMPONENTS
+// ============================================================
+import DepartmentDashboard from './components/department/DepartmentDashboard';
+import DepartmentRequests from './components/department/DepartmentRequests';
+import DepartmentApproved from './components/department/DepartmentApproved';
+import DepartmentReport from './components/department/DepartmentReport';
+
+// ============================================================
+// STUDENT COMPONENTS
+// ============================================================
+import StudentDashboard from './components/student/StudentDashboard';
+import StudentRemarks from './components/student/StudentRemarks';
+import StudentClearance from './components/student/StudentClearance';
+
+// ============================================================
+// PROTECTED ROUTE COMPONENT
+// ============================================================
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  allowedRoles?: ('admin' | 'department' | 'student')[];
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  allowedRoles,
+}) => {
+  const { isAuthenticated, user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(user.userType)) {
+    return <Navigate to={`/${user.userType}/dashboard`} replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// ============================================================
+// ROLE-BASED DASHBOARD ROUTER
+// ============================================================
+const DashboardRouter: React.FC = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  switch (user.userType) {
+    case 'admin':
+      return <AdminDashboard />;
+    case 'department':
+      return <DepartmentDashboard />;
+    case 'student':
+      return <StudentDashboard />;
+    default:
+      return <Navigate to="/login" replace />;
+  }
+};
+
+// ============================================================
+// MAIN APP COMPONENT
+// ============================================================
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* ===== LOGIN ===== */}
+          <Route path="/login" element={<LoginPage />} />
+
+          {/* ===== ROOT ===== */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <DashboardRouter />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ===== COMMON ROUTES (Profile, Settings, Help, Notifications) ===== */}
+          <Route
+            path="/:userType/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/:userType/settings"
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/:userType/help"
+            element={
+              <ProtectedRoute>
+                <HelpPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/:userType/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ===== ADMIN ROUTES ===== */}
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/departments"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminDepartments />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/students"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminStudents />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/reports"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminReports />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ===== DEPARTMENT ROUTES ===== */}
+          <Route
+            path="/department/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['department']}>
+                <DepartmentDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/department/requests"
+            element={
+              <ProtectedRoute allowedRoles={['department']}>
+                <DepartmentRequests />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/department/approved"
+            element={
+              <ProtectedRoute allowedRoles={['department']}>
+                <DepartmentApproved />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/department/report"
+            element={
+              <ProtectedRoute allowedRoles={['department']}>
+                <DepartmentReport />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ===== STUDENT ROUTES ===== */}
+          <Route
+            path="/student/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <StudentDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/student/remarks"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <StudentRemarks />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/student/clearance"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <StudentClearance />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ===== 404 ===== */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
+};
+
+export default App;
