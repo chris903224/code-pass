@@ -1,175 +1,345 @@
-/* ===== Login Container ===== */
-.login-container {
-  display: flex;
-  max-width: 1100px;
-  width: 100%;
-  min-height: 640px;
-  background: #ffffff;
-  border-radius: var(--radius-lg);
-  box-shadow: 0 20px 60px rgba(26, 38, 80, 0.2);
-  overflow: hidden;
-  margin: 20px;
-  animation: fadeIn 0.5s ease;
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
+:root {
+  --radius-lg: 28px;
+  --radius-md: 16px;
+  --radius-sm: 12px;
+
+  --blue-primary: #2f4bd6;
+  --blue-mid: #3355e0;
+  --blue-deep: #1e2a5e;
+
+  --text-dark: #1a2240;
+  --text-muted: #6b7392;
+  --text-faint: #a7afc9;
+
+  /* Neumorphic surface palette */
+  --neu-bg: #eef1f9;
+  --neu-light: #ffffff;
+  --neu-shadow-dark: rgba(163, 177, 208, 0.45);
+  --neu-shadow-light: rgba(255, 255, 255, 0.9);
+
+  /* Glass palette */
+  --glass-bg: rgba(255, 255, 255, 0.18);
+  --glass-border: rgba(255, 255, 255, 0.35);
+  --glass-highlight: rgba(255, 255, 255, 0.55);
+
+  font-family: 'Poppins', system-ui, -apple-system, sans-serif;
 }
 
-/* ===== Left Side ===== */
+/* ============================================================
+   PAGE SHELL + AMBIENT BACKDROP
+   ============================================================ */
+.page-shell {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 15% 20%, #dfe6ff 0%, transparent 55%),
+    radial-gradient(circle at 85% 80%, #e6e0ff 0%, transparent 55%),
+    linear-gradient(135deg, #eef1fb 0%, #f5f7ff 50%, #e9edf9 100%);
+}
+
+/* Floating ambient blobs for depth */
+.bg-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.55;
+  pointer-events: none;
+  animation: floatBlob 18s ease-in-out infinite;
+}
+.blob-1 {
+  width: 480px; height: 480px;
+  background: radial-gradient(circle, #6f8bff, #3355e0);
+  top: -120px; left: -100px;
+}
+.blob-2 {
+  width: 420px; height: 420px;
+  background: radial-gradient(circle, #a99bff, #6c5ce7);
+  bottom: -140px; right: -120px;
+  animation-delay: -6s;
+}
+.blob-3 {
+  width: 320px; height: 320px;
+  background: radial-gradient(circle, #7ed7ff, #4aa8ff);
+  top: 40%; right: 30%;
+  opacity: 0.35;
+  animation-delay: -12s;
+}
+
+@keyframes floatBlob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(30px, -30px) scale(1.08); }
+}
+
+/* ============================================================
+   MAIN CONTAINER — FROSTED GLASS CARD
+   ============================================================ */
+.login-container {
+  position: relative;
+  display: flex;
+  width: 100%;
+  max-width: 1120px;
+  min-height: 660px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  isolation: isolate;
+
+  /* Glassmorphic base */
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.25) 100%
+  );
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--glass-border);
+
+  /* Layered shadow: soft outer + neumorphic lift */
+  box-shadow:
+    0 30px 80px rgba(26, 38, 80, 0.18),
+    0 10px 30px rgba(26, 38, 80, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.15);
+
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   LEFT PANEL — DEEP GLASS BRANDING
+   ============================================================ */
 .login-left {
+  position: relative;
   flex: 1;
-  background: linear-gradient(145deg, #1e2a5e, #3355e0);
-  padding: 48px 40px;
+  padding: 52px 44px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  position: relative;
+  min-width: 300px;
+  color: #fff;
   overflow: hidden;
-  min-width: 280px;
+
+  /* Gradient glass over brand color */
+  background:
+    radial-gradient(circle at 85% 15%, rgba(255, 255, 255, 0.22), transparent 45%),
+    radial-gradient(circle at 10% 90%, rgba(120, 150, 255, 0.35), transparent 50%),
+    linear-gradient(145deg, rgba(30, 42, 94, 0.92) 0%, rgba(51, 85, 224, 0.88) 100%);
+
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.login-left::before {
-  content: '';
+/* Glass sheen highlight */
+.glass-sheen {
   position: absolute;
-  top: -50%;
-  right: -30%;
-  width: 400px;
-  height: 400px;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 50%;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    transparent 35%,
+    transparent 65%,
+    rgba(255, 255, 255, 0.06) 100%
+  );
   pointer-events: none;
 }
 
+/* Decorative orbs */
+.login-left::before,
 .login-left::after {
   content: '';
   position: absolute;
-  bottom: -40%;
-  left: -20%;
-  width: 300px;
-  height: 300px;
-  background: rgba(255, 255, 255, 0.03);
   border-radius: 50%;
   pointer-events: none;
+  filter: blur(2px);
+}
+.login-left::before {
+  top: -140px; right: -110px;
+  width: 360px; height: 360px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15), transparent 70%);
+}
+.login-left::after {
+  bottom: -160px; left: -120px;
+  width: 340px; height: 340px;
+  background: radial-gradient(circle, rgba(120, 150, 255, 0.28), transparent 70%);
 }
 
-.brand-wrapper {
-  position: relative;
-  z-index: 1;
-}
-
-.brand-message {
-  position: relative;
-  z-index: 1;
-  margin: 30px 0 20px;
-}
-
-.brand-message h2 {
-  font-size: 28px;
-  font-weight: 700;
-  color: #ffffff;
-  line-height: 1.3;
-  max-width: 320px;
-}
-
+.brand-wrapper,
+.brand-message,
 .brand-features {
   position: relative;
   z-index: 1;
+}
+
+.brand-message { margin: 32px 0 24px; }
+
+.brand-message h2 {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.5px;
+  max-width: 340px;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.15);
+}
+
+.brand-sub {
+  margin-top: 14px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.78);
+  max-width: 340px;
+}
+
+.brand-features {
   display: flex;
-  gap: 30px;
-  margin-top: 10px;
+  gap: 14px;
   flex-wrap: wrap;
+  margin-top: 8px;
 }
 
 .feature-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 14px;
+  padding: 10px 14px 10px 10px;
+  font-size: 13px;
   font-weight: 500;
+  color: rgba(255, 255, 255, 0.92);
+  border-radius: 999px;
+
+  /* Glass pill */
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 6px 16px rgba(0, 0, 0, 0.12);
+  transition: transform 0.25s ease, background 0.25s ease;
+}
+.feature-item:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .feature-icon {
-  font-size: 20px;
-  background: rgba(255, 255, 255, 0.12);
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
+  width: 30px; height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 15px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.4);
 }
 
-/* ===== Right Side ===== */
+/* ============================================================
+   RIGHT PANEL — NEUMORPHIC LIGHT SURFACE
+   ============================================================ */
 .login-right {
   flex: 1;
-  padding: 32px 36px;
+  min-width: 340px;
+  padding: 44px 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff;
-  min-width: 320px;
+
+  /* Soft neumorphic backdrop */
+  background:
+    radial-gradient(circle at 70% 20%, rgba(255, 255, 255, 0.9), transparent 60%),
+    linear-gradient(145deg, #f4f7ff 0%, #e8ecf7 100%);
 }
 
 .login-form-wrapper {
   width: 100%;
   max-width: 420px;
+  animation: fadeIn 0.5s ease;
 }
 
-.login-header {
-  margin-bottom: 16px;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
+.login-header { margin-bottom: 18px; }
 .login-header h2 {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 700;
   color: var(--text-dark);
+  letter-spacing: -0.4px;
 }
-
 .login-header p {
   color: var(--text-muted);
   font-size: 14px;
+  margin-top: 4px;
 }
 
-/* ===== Auth Toggle ===== */
+/* ============================================================
+   AUTH TOGGLE — NEUMORPHIC TRACK
+   ============================================================ */
 .auth-toggle {
   display: flex;
-  gap: 0;
-  background: #f4f6fb;
-  border-radius: 10px;
-  padding: 4px;
-  margin-bottom: 20px;
+  gap: 4px;
+  padding: 6px;
+  margin-bottom: 22px;
+  border-radius: var(--radius-md);
+
+  /* Inset neumorphic groove */
+  background: linear-gradient(145deg, #e6eaf5, #f6f8ff);
+  box-shadow:
+    inset 3px 3px 8px var(--neu-shadow-dark),
+    inset -3px -3px 8px var(--neu-shadow-light);
 }
 
 .auth-toggle-btn {
   flex: 1;
-  padding: 10px 20px;
+  padding: 12px 20px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: transparent;
-  font-family: 'Poppins', sans-serif;
+  font-family: inherit;
   font-size: 14px;
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
-  transition: 0.3s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.auth-toggle-btn:hover:not(.active) {
-  color: var(--text-dark);
-}
+.auth-toggle-btn:hover:not(.active) { color: var(--text-dark); }
 
 .auth-toggle-btn.active {
-  background: #ffffff;
   color: var(--blue-primary);
-  box-shadow: 0 4px 16px rgba(26, 38, 80, 0.08);
+  background: linear-gradient(145deg, #ffffff, #eef1f9);
+  box-shadow:
+    4px 4px 10px var(--neu-shadow-dark),
+    -4px -4px 10px var(--neu-shadow-light);
 }
 
-/* ===== User Type Selector ===== */
+/* ============================================================
+   USER TYPE SELECTOR — NEUMORPHIC RAISED
+   ============================================================ */
 .user-type-selector {
   display: flex;
   gap: 8px;
-  background: #f4f6fb;
-  border-radius: 10px;
   padding: 6px;
-  margin-bottom: 24px;
+  margin-bottom: 26px;
+  border-radius: var(--radius-md);
+
+  background: linear-gradient(145deg, #e6eaf5, #f6f8ff);
+  box-shadow:
+    inset 3px 3px 8px var(--neu-shadow-dark),
+    inset -3px -3px 8px var(--neu-shadow-light);
 }
 
 .user-type-btn {
@@ -177,90 +347,94 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: 6px;
+  padding: 11px 10px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: transparent;
-  font-family: 'Poppins', sans-serif;
+  font-family: inherit;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
-  transition: 0.3s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.user-type-btn .user-type-icon {
-  font-size: 16px;
-}
-
-.user-type-btn:hover:not(.active) {
-  color: var(--text-dark);
-}
+.user-type-btn .user-type-icon { font-size: 15px; }
+.user-type-btn:hover:not(.active) { color: var(--text-dark); }
 
 .user-type-btn.active {
-  background: #ffffff;
   color: var(--blue-primary);
-  box-shadow: 0 4px 16px rgba(26, 38, 80, 0.08);
+  background: linear-gradient(145deg, #ffffff, #eef1f9);
+  box-shadow:
+    4px 4px 10px var(--neu-shadow-dark),
+    -4px -4px 10px var(--neu-shadow-light);
 }
 
-/* ===== Form ===== */
+/* ============================================================
+   FORM — NEUMORPHIC INPUTS
+   ============================================================ */
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .form-group label {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-dark);
+  padding-left: 4px;
 }
 
 .input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
-  background: #f7f8fc;
-  border: 2px solid #eaecf5;
-  border-radius: 10px;
-  transition: 0.3s ease;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(145deg, #e6eaf5, #f9fbff);
+
+  /* Inset neumorphic field */
+  box-shadow:
+    inset 4px 4px 10px var(--neu-shadow-dark),
+    inset -4px -4px 10px var(--neu-shadow-light);
+
+  transition: box-shadow 0.3s ease, background 0.3s ease;
 }
 
 .input-wrapper:focus-within {
-  border-color: var(--blue-primary);
-  background: #ffffff;
-  box-shadow: 0 0 0 4px rgba(47, 75, 214, 0.08);
+  background: linear-gradient(145deg, #eef2fb, #ffffff);
+  box-shadow:
+    inset 3px 3px 8px rgba(163, 177, 208, 0.35),
+    inset -3px -3px 8px rgba(255, 255, 255, 0.95),
+    0 0 0 3px rgba(47, 75, 214, 0.12);
 }
 
 .input-icon {
-  padding: 0 14px 0 16px;
+  padding: 0 12px 0 16px;
   font-size: 16px;
   color: var(--text-muted);
-  opacity: 0.6;
+  opacity: 0.65;
 }
 
 .input-wrapper input {
   flex: 1;
-  padding: 14px 16px 14px 0;
+  width: 100%;
+  padding: 15px 16px 15px 0;
   border: none;
   background: transparent;
-  font-family: 'Poppins', sans-serif;
+  font-family: inherit;
   font-size: 14px;
   color: var(--text-dark);
   outline: none;
-  width: 100%;
 }
-
-.input-wrapper input::placeholder {
-  color: #a7afc9;
-}
+.input-wrapper input::placeholder { color: var(--text-faint); }
 
 .toggle-password {
   background: none;
@@ -269,21 +443,20 @@
   font-size: 16px;
   cursor: pointer;
   opacity: 0.5;
-  transition: 0.3s ease;
+  transition: opacity 0.25s ease, transform 0.25s ease;
 }
+.toggle-password:hover { opacity: 1; transform: scale(1.1); }
 
-.toggle-password:hover {
-  opacity: 1;
-}
-
-/* ===== Form Options ===== */
+/* ============================================================
+   FORM OPTIONS — NEUMORPHIC CHECKBOX
+   ============================================================ */
 .form-options {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 2px 0 4px;
-  flex-wrap: wrap;
   gap: 8px;
+  flex-wrap: wrap;
+  margin: 2px 0 6px;
 }
 
 .remember-me {
@@ -293,35 +466,38 @@
   font-size: 13px;
   color: var(--text-dark);
   cursor: pointer;
+  user-select: none;
 }
-
-.remember-me input[type="checkbox"] {
-  display: none;
-}
+.remember-me input[type="checkbox"] { display: none; }
 
 .checkmark {
-  width: 18px;
-  height: 18px;
-  border: 2px solid #d0d5e8;
-  border-radius: 4px;
-  display: inline-block;
   position: relative;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
-  transition: 0.3s ease;
+  border-radius: 6px;
+  background: linear-gradient(145deg, #e6eaf5, #f9fbff);
+  box-shadow:
+    inset 2px 2px 4px var(--neu-shadow-dark),
+    inset -2px -2px 4px var(--neu-shadow-light);
+  transition: all 0.25s ease;
 }
 
 .remember-me input:checked + .checkmark {
-  background: var(--blue-primary);
-  border-color: var(--blue-primary);
+  background: linear-gradient(145deg, var(--blue-primary), var(--blue-mid));
+  box-shadow:
+    2px 2px 6px rgba(47, 75, 214, 0.4),
+    -1px -1px 4px rgba(255, 255, 255, 0.8);
 }
 
 .remember-me input:checked + .checkmark::after {
   content: '✓';
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: #ffffff;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
   font-size: 12px;
   font-weight: 700;
 }
@@ -332,161 +508,181 @@
   text-decoration: none;
   font-weight: 500;
   font-size: 13px;
+  transition: opacity 0.2s ease;
 }
-
 .terms-link:hover,
-.forgot-password:hover {
-  text-decoration: underline;
-}
+.forgot-password:hover { text-decoration: underline; }
 
-/* ===== Sign In Button ===== */
+/* ============================================================
+   SIGN IN BUTTON — NEUMORPHIC + GRADIENT
+   ============================================================ */
 .signin-btn {
-  padding: 16px;
-  background: linear-gradient(135deg, var(--blue-primary), var(--blue-mid));
-  color: #ffffff;
-  border: none;
-  border-radius: 10px;
-  font-family: 'Poppins', sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  cursor: pointer;
-  transition: 0.3s ease;
-  margin-top: 4px;
   position: relative;
+  padding: 16px;
+  margin-top: 6px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: #fff;
+  cursor: pointer;
   overflow: hidden;
+
+  background: linear-gradient(135deg, var(--blue-primary), var(--blue-mid));
+  box-shadow:
+    6px 6px 16px rgba(47, 75, 214, 0.35),
+    -4px -4px 12px rgba(255, 255, 255, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .signin-btn::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent);
-  opacity: 0;
-  transition: 0.3s ease;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
 }
 
 .signin-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(47, 75, 214, 0.35);
+  box-shadow:
+    8px 10px 22px rgba(47, 75, 214, 0.42),
+    -4px -4px 12px rgba(255, 255, 255, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
+.signin-btn:hover:not(:disabled)::after { transform: translateX(100%); }
 
-.signin-btn:hover:not(:disabled)::after {
-  opacity: 1;
+.signin-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow:
+    3px 3px 8px rgba(47, 75, 214, 0.4),
+    inset 2px 2px 6px rgba(0, 0, 0, 0.15),
+    inset -2px -2px 6px rgba(255, 255, 255, 0.15);
 }
 
 .signin-btn:disabled {
-  opacity: 0.7;
+  opacity: 0.65;
   cursor: not-allowed;
   transform: none;
 }
 
-/* ===== Form Error ===== */
+/* ============================================================
+   FORM ERROR
+   ============================================================ */
 .form-error {
-  color: #e74c3c;
+  min-height: 22px;
+  padding: 4px 0;
+  text-align: center;
   font-size: 13px;
   font-weight: 500;
-  text-align: center;
-  min-height: 24px;
-  padding: 4px 0;
+  color: #e74c3c;
 }
 
-/* ===== Footer ===== */
+/* ============================================================
+   FOOTER
+   ============================================================ */
 .login-footer {
-  margin-top: 24px;
+  margin-top: 26px;
   text-align: center;
 }
-
 .login-footer p {
   font-size: 11px;
-  color: #a7afc9;
+  color: var(--text-faint);
   letter-spacing: 0.5px;
 }
-
 .login-footer .copyright {
   margin-top: 2px;
   font-size: 10px;
 }
 
-/* ===== Responsive ===== */
+/* ============================================================
+   LOADING SPINNER
+   ============================================================ */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 16px;
+  background: #eef1fb;
+}
+.spinner {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: 4px solid #dbe2f5;
+  border-top-color: var(--blue-primary);
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
 @media (max-width: 900px) {
   .login-container {
     flex-direction: column;
-    max-width: 480px;
+    max-width: 500px;
     min-height: auto;
   }
 
   .login-left {
-    padding: 36px 32px;
-    min-height: 200px;
+    padding: 40px 32px 32px;
+    min-height: 260px;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   }
 
   .login-left::before,
-  .login-left::after {
-    display: none;
-  }
+  .login-left::after { display: none; }
 
-  .brand-message h2 {
-    font-size: 22px;
-    max-width: 100%;
-  }
+  .brand-message h2 { font-size: 24px; max-width: 100%; }
+  .brand-features { gap: 10px; }
 
-  .brand-features {
-    gap: 16px;
-  }
-
-  .login-right {
-    padding: 32px 24px;
-  }
-
-  .login-form-wrapper {
-    max-width: 100%;
-  }
+  .login-right { padding: 36px 28px 40px; }
+  .login-form-wrapper { max-width: 100%; }
 }
 
 @media (max-width: 480px) {
-  .login-container {
-    margin: 12px;
-  }
+  .page-shell { padding: 12px; }
 
-  .login-left {
-    padding: 24px 16px;
-    min-height: 140px;
-  }
+  .login-container { border-radius: 22px; }
 
-  .brand-message h2 {
-    font-size: 18px;
-  }
+  .login-left { padding: 28px 20px 24px; min-height: 220px; }
+  .brand-message h2 { font-size: 20px; }
+  .brand-sub { font-size: 12px; }
 
-  .login-right {
-    padding: 24px 16px;
-  }
+  .login-right { padding: 28px 18px 32px; }
 
-  .login-header h2 {
-    font-size: 20px;
-  }
+  .login-header h2 { font-size: 20px; }
 
-  .user-type-btn {
-    font-size: 10px;
-    padding: 8px 6px;
-  }
+  .user-type-btn { font-size: 10.5px; padding: 9px 4px; gap: 4px; }
+  .user-type-btn .user-type-icon { font-size: 13px; }
 
-  .user-type-btn .user-type-icon {
-    font-size: 13px;
-  }
+  .auth-toggle-btn { font-size: 12.5px; padding: 10px 12px; }
 
-  .form-options {
-    flex-wrap: wrap;
-    gap: 10px;
-  }
+  .form-options { gap: 10px; }
 
-  .signin-btn {
-    font-size: 14px;
-    padding: 14px;
-  }
+  .signin-btn { font-size: 14px; padding: 14px; }
 
-  .auth-toggle-btn {
-    font-size: 12px;
-    padding: 8px 12px;
-  }
+  .feature-item { padding: 8px 12px 8px 8px; font-size: 12px; }
+  .feature-icon { width: 26px; height: 26px; font-size: 13px; }
 }
+
+/* ============================================================
+   ACCESSIBILITY — REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .bg-blob,
+  .login-container,
+  .login-form-wrapper { animation: none !important; }
+
+  .signin-btn,
+  .auth-toggle-btn,
+  .user-type-btn,
+  .feature-item { transition: none !important; }
+} 

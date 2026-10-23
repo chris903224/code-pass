@@ -1,84 +1,180 @@
+/* ============================================================
+   DEPARTMENT LAYOUT & CONTAINERS
+   ============================================================ */
 .department-dashboard,
 .department-page {
   max-width: 1400px;
   margin: 0 auto;
+  padding: 24px 32px;
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   HERO SECTION (Clean Glassmorphism)
+   ============================================================ */
+.hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 32px 40px;
+  margin-bottom: 24px;
+  box-shadow: var(--glass-shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle Glow for Hero */
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -50px; right: -50px;
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(111, 139, 255, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.hero-text {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-text h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+  color: var(--text-dark);
+}
+
+.hero-text p {
+  font-size: 15px;
+  color: var(--text-muted);
+  margin: 0;
 }
 
 .hero-art {
+  position: relative;
+  z-index: 1;
   flex-shrink: 0;
 }
 
 .hero-art svg {
   max-width: 100%;
   height: auto;
+  filter: drop-shadow(0 10px 20px rgba(47, 75, 214, 0.15));
 }
 
+/* ============================================================
+   STATS GRID
+   ============================================================ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+/* ============================================================
+   CONTENT GRID (For Side-by-side panels)
+   ============================================================ */
+.content-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.side-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ============================================================
+   DEPARTMENT INFO LIST
+   ============================================================ */
+.department-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.department-info .info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed rgba(163, 177, 208, 0.4);
+}
+
+.department-info .info-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.department-info .info-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.department-info .info-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+/* ============================================================
+   QUICK ACTIONS & REMARKS BUTTON
+   ============================================================ */
 .quick-buttons {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 12px;
   margin-bottom: 16px;
-}
-
-.quick-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 16px;
-  border-radius: 12px;
-  border: none;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  color: #ffffff;
-  transition: 0.3s ease;
-  font-family: 'Poppins', sans-serif;
-}
-
-.quick-btn.approve {
-  background: linear-gradient(135deg, #3ddc84, #22b463);
-}
-
-.quick-btn.reject {
-  background: linear-gradient(135deg, #ff6b6b, #ff4d4f);
-}
-
-.quick-btn:hover {
-  filter: brightness(1.05);
-  transform: translateY(-2px);
-}
-
-.quick-icon {
-  font-size: 20px;
 }
 
 .remarks-btn {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: #eef1ff;
-  border: 1px dashed #d0d5e8;
-  border-radius: 12px;
-  padding: 8px 16px;
+  gap: 16px;
+  background: #ffffff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 16px;
   cursor: pointer;
   text-align: left;
-  transition: 0.3s ease;
-  font-family: 'Poppins', sans-serif;
+  box-shadow: var(--clay-shadow-out);
+  transition: all 0.2s ease;
 }
 
 .remarks-btn:hover:not(:disabled) {
-  background: #e3e9ff;
+  background: var(--blue-light);
+  transform: translateY(-2px);
 }
 
 .remarks-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  box-shadow: none;
+  background: var(--bg-base);
 }
 
 .remarks-icon {
-  font-size: 16px;
+  font-size: 20px;
 }
 
 .remarks-text {
@@ -87,84 +183,147 @@
 }
 
 .remarks-text strong {
-  font-size: 12px;
-  color: #1f2545;
+  font-size: 14px;
+  color: var(--text-dark);
 }
 
 .remarks-text small {
   font-size: 12px;
-  color: #7c85a3;
+  color: var(--text-muted);
 }
 
-.department-info {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.department-info .info-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 4px 0;
-  border-bottom: 1px solid #ebedf6;
-}
-
-.department-info .info-item:last-child {
-  border-bottom: none;
-}
-
-.department-info .info-label {
-  font-size: 12px;
-  color: #7c85a3;
-}
-
-.department-info .info-value {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1f2545;
-}
-
+/* ============================================================
+   TABLE ACTIONS (Row buttons)
+   ============================================================ */
 .row-actions {
   display: flex;
   gap: 8px;
 }
 
-.row-actions .btn {
-  min-width: 30px;
-  min-height: 30px;
+.row-actions .btn-sm {
+  min-width: 32px;
+  min-height: 32px;
   padding: 8px;
   font-size: 14px;
 }
 
-@media (max-width: 1100px) {
+/* ============================================================
+   PAGINATION
+   ============================================================ */
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.pagination-info {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.page-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: #ffffff;
+  color: var(--text-dark);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--clay-shadow-out);
+  transition: all 0.2s;
+}
+
+.page-btn.active {
+  background: var(--blue-primary);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(47, 75, 214, 0.4);
+}
+
+.page-btn:hover:not(.active):not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--clay-shadow-hover);
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ============================================================
+   REPORTS SPECIFIC
+   ============================================================ */
+.report-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.chart-placeholder {
+  height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-base);
+  border-radius: var(--radius-md);
+  box-shadow: var(--clay-shadow-in);
+  margin-top: 16px;
+}
+
+.chart-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ============================================================
+   RESPONSIVE DESIGN
+   ============================================================ */
+@media (max-width: 1200px) {
   .content-grid {
     grid-template-columns: 1fr;
-  }
-
-  .quick-buttons {
-    grid-template-columns: 1fr 1fr;
   }
 }
 
 @media (max-width: 768px) {
-  .hero {
-    flex-direction: column;
-    text-align: center;
-    gap: 16px;
+  .department-dashboard,
+  .department-page {
     padding: 16px;
   }
 
+  .hero {
+    flex-direction: column;
+    text-align: center;
+    gap: 24px;
+    padding: 24px;
+  }
+
   .hero-art {
-    display: none;
+    display: none; /* Hide complex art on mobile */
+  }
+
+  .report-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbar {
+    flex-direction: column;
+  }
+
+  .select-filter {
+    width: 100%;
   }
 
   .quick-buttons {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 480px) {
-  .department-page .stats-grid {
     grid-template-columns: 1fr;
   }
 }

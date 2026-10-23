@@ -4,7 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './hooks/useAuth';
 
 // ============================================================
-// PAGES
+// PAGES & COMPONENTS
 // ============================================================
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
@@ -12,28 +12,15 @@ import SettingsPage from './pages/SettingsPage';
 import HelpPage from './pages/HelpPage';
 import NotificationsPage from './pages/NotificationsPage';
 
-// ============================================================
-// ADMIN COMPONENTS
-// ============================================================
+// Admin Components
 import AdminDashboard from './components/admin/AdminDashboard';
 import AdminDepartments from './components/admin/AdminDepartments';
 import AdminStudents from './components/admin/AdminStudents';
 import AdminReports from './components/admin/AdminReports';
 
-// ============================================================
-// DEPARTMENT COMPONENTS
-// ============================================================
-import DepartmentDashboard from './components/department/DepartmentDashboard';
-import DepartmentRequests from './components/department/DepartmentRequests';
-import DepartmentApproved from './components/department/DepartmentApproved';
-import DepartmentReport from './components/department/DepartmentReport';
-
-// ============================================================
-// STUDENT COMPONENTS
-// ============================================================
-import StudentDashboard from './components/student/StudentDashboard';
-import StudentRemarks from './components/student/StudentRemarks';
-import StudentClearance from './components/student/StudentClearance';
+// Unified Portals
+import DepartmentPortal from './components/department/DepartmentPortal';
+import StudentPortal from './components/student/StudentPortal'; // <-- Pinalitan ang tatlong imports
 
 // ============================================================
 // PROTECTED ROUTE COMPONENT
@@ -92,9 +79,9 @@ const DashboardRouter: React.FC = () => {
     case 'admin':
       return <AdminDashboard />;
     case 'department':
-      return <DepartmentDashboard />;
+      return <DepartmentPortal />; 
     case 'student':
-      return <StudentDashboard />;
+      return <StudentPortal />; // <-- Pinalitan din dito
     default:
       return <Navigate to="/login" replace />;
   }
@@ -121,132 +108,37 @@ const App: React.FC = () => {
             }
           />
 
-          {/* ===== COMMON ROUTES (Profile, Settings, Help, Notifications) ===== */}
-          <Route
-            path="/:userType/profile"
-            element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/:userType/settings"
-            element={
-              <ProtectedRoute>
-                <SettingsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/:userType/help"
-            element={
-              <ProtectedRoute>
-                <HelpPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/:userType/notifications"
-            element={
-              <ProtectedRoute>
-                <NotificationsPage />
-              </ProtectedRoute>
-            }
-          />
+          {/* ===== COMMON ROUTES ===== */}
+          <Route path="/:userType/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="/:userType/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path="/:userType/help" element={<ProtectedRoute><HelpPage /></ProtectedRoute>} />
+          <Route path="/:userType/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
 
           {/* ===== ADMIN ROUTES ===== */}
-          <Route
-            path="/admin/dashboard"
+          <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/departments" element={<ProtectedRoute allowedRoles={['admin']}><AdminDepartments /></ProtectedRoute>} />
+          <Route path="/admin/students" element={<ProtectedRoute allowedRoles={['admin']}><AdminStudents /></ProtectedRoute>} />
+          <Route path="/admin/reports" element={<ProtectedRoute allowedRoles={['admin']}><AdminReports /></ProtectedRoute>} />
+
+          {/* ======================================================== */}
+          {/* UNIFIED PORTALS (Internal State Navigation)              */}
+          {/* ======================================================== */}
+          <Route 
+            path="/department/*" 
             element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminDashboard />
+              <ProtectedRoute allowedRoles={['department']}>
+                <DepartmentPortal />
               </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/departments"
-            element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminDepartments />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/students"
-            element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminStudents />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/reports"
-            element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminReports />
-              </ProtectedRoute>
-            }
+            } 
           />
 
-          {/* ===== DEPARTMENT ROUTES ===== */}
-          <Route
-            path="/department/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['department']}>
-                <DepartmentDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/department/requests"
-            element={
-              <ProtectedRoute allowedRoles={['department']}>
-                <DepartmentRequests />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/department/approved"
-            element={
-              <ProtectedRoute allowedRoles={['department']}>
-                <DepartmentApproved />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/department/report"
-            element={
-              <ProtectedRoute allowedRoles={['department']}>
-                <DepartmentReport />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* ===== STUDENT ROUTES ===== */}
-          <Route
-            path="/student/dashboard"
+          <Route 
+            path="/student/*" 
             element={
               <ProtectedRoute allowedRoles={['student']}>
-                <StudentDashboard />
+                <StudentPortal /> 
               </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/student/remarks"
-            element={
-              <ProtectedRoute allowedRoles={['student']}>
-                <StudentRemarks />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/student/clearance"
-            element={
-              <ProtectedRoute allowedRoles={['student']}>
-                <StudentClearance />
-              </ProtectedRoute>
-            }
+            } 
           />
 
           {/* ===== 404 ===== */}
