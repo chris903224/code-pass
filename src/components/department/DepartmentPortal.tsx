@@ -27,17 +27,6 @@ interface DepartmentStats {
 }
 
 // ============================================================
-// MOCK DATA
-// ============================================================
-const INITIAL_REQUESTS: ClearanceRequest[] = [
-  { id: '1', studentId: '2023-001', studentName: 'Alice Johnson', course: 'BSIT', year: '4th Year', dateSubmitted: '2026-10-15', status: 'pending' },
-  { id: '2', studentId: '2023-045', studentName: 'Bob Smith', course: 'BSED', year: '3rd Year', dateSubmitted: '2026-10-14', status: 'pending' },
-  { id: '3', studentId: '2022-112', studentName: 'Charlie Brown', course: 'CRIM', year: '4th Year', dateSubmitted: '2026-10-10', status: 'approved', remarks: 'All clear' },
-  { id: '4', studentId: '2024-008', studentName: 'Diana Prince', course: 'BSPSY', year: '2nd Year', dateSubmitted: '2026-10-12', status: 'pending' },
-  { id: '5', studentId: '2021-099', studentName: 'Evan Wright', course: 'BSIT', year: '4th Year', dateSubmitted: '2026-10-08', status: 'rejected', remarks: 'Missing lab equipment' },
-];
-
-// ============================================================
 // REUSABLE UI COMPONENTS
 // ============================================================
 const Button = ({ children, variant = 'primary', size = 'md', className = '', ...props }: any) => {
@@ -106,12 +95,12 @@ const Table = ({ columns, data, emptyMessage }: any) => {
 // ============================================================
 const DepartmentPortal: React.FC = () => {
   const navigate = useNavigate();
-  const { logout } = useAuth(); 
+  const { logout, user } = useAuth(); 
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'requests' | 'approved' | 'reports'>('dashboard');
   const [requests, setRequests] = useState<ClearanceRequest[]>(() => {
     const saved = localStorage.getItem('clearance_requests');
-    return saved ? JSON.parse(saved) : INITIAL_REQUESTS;
+    return saved ? JSON.parse(saved) : [];
   });
   
   const [isLoading, setIsLoading] = useState(true);
@@ -127,11 +116,72 @@ const DepartmentPortal: React.FC = () => {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { setTimeout(() => setIsLoading(false), 800); }, []);
-  useEffect(() => { localStorage.setItem('clearance_requests', JSON.stringify(requests)); }, [requests]);
+  // --- DYNAMIC NAMES ---
+  const [deptName, setDeptName] = useState('Department');
+  const [deptHead, setDeptHead] = useState('Department Head');
+
+  // ============================================================
+  // FIX: MEGA FALLBACK PARA SA DEPARTMENT AT NAME
+  // ============================================================
+  useEffect(() => {
+    let foundName = null;
+    let foundDept = null;
+
+    // 1. Try AuthContext
+    if (user) {
+      const u: any = user;
+      foundName = u.name || u.fullName || u.firstName || u.username;
+      foundDept = u.department || u.departmentName || u.deptName || u.dept;
+    }
+
+    // 2. Try LocalStorage/SessionStorage kung walang nahanap sa AuthContext
+    if (!foundName || !foundDept) {
+      const storages = [localStorage, sessionStorage];
+      for (const storage of storages) {
+        // Unahin ang mga common keys
+        const keysToTry = ['user', 'auth_user', 'currentUser', 'department_user', 'userData', 'user_info', 'profile'];
+        
+        for (const key of keysToTry) {
+          const val = storage.getItem(key);
+          if (val) {
+            try {
+              const parsed = JSON.parse(val);
+              
+              // Kunin ang Name
+              if (!foundName) {
+                foundName = parsed.name || parsed.fullName || parsed.firstName || parsed.username || parsed.userName;
+                if (parsed.user && !foundName) foundName = parsed.user.name || parsed.user.fullName;
+              }
+              
+              // Kunin ang Department
+              if (!foundDept) {
+                foundDept = parsed.department || parsed.departmentName || parsed.deptName || parsed.dept;
+                if (parsed.user && !foundDept) foundDept = parsed.user.department || parsed.user.departmentName;
+              }
+            } catch (e) {}
+          }
+        }
+        if (foundName && foundDept) break; // Stop kung nahanap na lahat
+      }
+    }
+
+    // Fallback kung wala pa rin
+    setDeptHead(foundName || 'Department Head');
+    setDeptName(foundDept || 'Department'); // Palitan natin ang hardcoded na 'IT Department' ng 'Department' na default
+
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, [user]);
+
+  useEffect(() => {
+    localStorage.setItem('clearance_requests', JSON.stringify(requests));
+  }, [requests]);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (notifRef.current && !notifRef.current.contains(event.target as Node)) setIsNotifOpen(false);
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setIsNotifOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -144,15 +194,15 @@ const DepartmentPortal: React.FC = () => {
     const approved = requests.filter(r => r.status === 'approved').length;
     const rejected = requests.filter(r => r.status === 'rejected').length;
     return {
-      departmentName: 'IT Department',
-      departmentHead: 'Dr. Reyes',
+      departmentName: deptName,
+      departmentHead: deptHead,
       totalRequests: total,
       pendingRequests: pending,
       approvedRequests: approved,
       rejectedRequests: rejected,
       approvalRate: total > 0 ? Math.round((approved / total) * 100) : 0,
     };
-  }, [requests]);
+  }, [requests, deptName, deptHead]);
 
   const recentNotifications = useMemo(() => {
     return requests.slice(0, 5).map(req => ({
@@ -163,7 +213,6 @@ const DepartmentPortal: React.FC = () => {
     }));
   }, [requests]);
 
-  // --- FILTERING LOGIC ---
   const filteredRequests = useMemo(() => {
     return requests.filter(req => {
       const matchSearch = req.studentId.toLowerCase().includes(searchTerm.toLowerCase()) || req.studentName.toLowerCase().includes(searchTerm.toLowerCase());
@@ -219,7 +268,8 @@ const DepartmentPortal: React.FC = () => {
     if (window.confirm("Are you sure you want to log out?")) {
       try {
         if (logout) await logout();
-        else { localStorage.removeItem('token'); localStorage.removeItem('user'); }
+        localStorage.clear(); 
+        sessionStorage.clear();
         navigate('/login', { replace: true });
       } catch (error) { console.error("Logout failed:", error); }
     }
@@ -268,7 +318,7 @@ const DepartmentPortal: React.FC = () => {
     <>
       <section className="hero">
         <div className="hero-text">
-          <h2>Hello, {stats.departmentName}! <span className="wave">👋</span></h2>
+          <h2>Hello, {deptName}! <span className="wave">👋</span></h2>
           <p>Manage and process student clearance requests for your department.</p>
         </div>
         <div className="hero-art">
@@ -323,10 +373,7 @@ const DepartmentPortal: React.FC = () => {
 
   const renderApproved = () => {
     const approvedOnly = filteredRequests.filter(r => r.status === 'approved');
-    const approvedColumns = [
-      ...baseColumns,
-      { key: 'remarks', header: 'Remarks', render: (item: ClearanceRequest) => item.remarks || '—' },
-    ];
+    const approvedColumns = [...baseColumns, { key: 'remarks', header: 'Remarks', render: (item: ClearanceRequest) => item.remarks || '—' }];
     return (
       <>
         <section className="page-header">
@@ -338,35 +385,22 @@ const DepartmentPortal: React.FC = () => {
     );
   };
 
-  // ============================================================
-  // REPORTS VIEW (WITH CHARTS)
-  // ============================================================
   const renderReports = () => {
     const courseCounts = requests.reduce((acc: any, req) => {
       acc[req.course] = (acc[req.course] || 0) + 1;
       return acc;
     }, {});
-    const maxCourseCount = Math.max(...Object.values(courseCounts), 1) as number;
+    const maxCourseCount = Math.max(...(Object.values(courseCounts) as number[]), 1);
 
     const total = requests.length || 1;
     const clearedPercent = (stats.approvedRequests / total) * 100;
     const pendingPercent = (stats.pendingRequests / total) * 100;
-    const rejectedPercent = (stats.rejectedRequests / total) * 100;
 
     return (
       <>
         <section className="page-header">
-          <div className="page-header-text">
-            <h2>Report & Analytics</h2>
-            <p>Insights and trends on clearance activity.</p>
-          </div>
-          <div className="page-header-actions" style={{ display: 'flex', gap: '12px' }}>
-            <select className="select-filter">
-              <option>This Semester</option>
-              <option>This Month</option>
-            </select>
-            <Button variant="primary" onClick={() => handleExportCSV(requests, 'Full_Clearance_Report')}>⬇ Download Report</Button>
-          </div>
+          <div className="page-header-text"><h2>Report & Analytics</h2><p>Insights and trends on clearance activity.</p></div>
+          <Button variant="primary" onClick={() => handleExportCSV(requests, 'Full_Clearance_Report')}>⬇ Download Report</Button>
         </section>
 
         <section className="stats-grid">
@@ -377,67 +411,28 @@ const DepartmentPortal: React.FC = () => {
         </section>
 
         <div className="report-grid">
-          {/* REQUESTS BY COURSE (BAR CHART) */}
           <Panel title="Requests by Course">
             <p className="chart-sub" style={{ marginBottom: '24px' }}>Number of clearance requests by course.</p>
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', height: '200px', padding: '0 20px' }}>
               {Object.entries(courseCounts).map(([course, count]: any) => (
                 <div key={course} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '40px' }}>
                   <span style={{ fontSize: '12px', fontWeight: 600, marginBottom: '8px' }}>{count}</span>
-                  <div style={{ 
-                    width: '100%', 
-                    height: `${(count / maxCourseCount) * 150}px`, 
-                    background: 'linear-gradient(180deg, #4c6ef5, #3b5bdb)', 
-                    borderRadius: '8px 8px 0 0',
-                    boxShadow: '0 4px 10px rgba(59, 91, 219, 0.3)'
-                  }} />
+                  <div style={{ width: '100%', height: `${(count / maxCourseCount) * 150}px`, background: 'linear-gradient(180deg, #4c6ef5, #3b5bdb)', borderRadius: '8px 8px 0 0' }} />
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', fontWeight: 600 }}>{course}</span>
                 </div>
               ))}
             </div>
           </Panel>
 
-          {/* STATUS BREAKDOWN (DONUT CHART) */}
           <Panel title="Status Breakdown">
             <p className="chart-sub" style={{ marginBottom: '24px' }}>Current standing of all requests.</p>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              
-              <div style={{
-                width: '180px', height: '180px', borderRadius: '50%',
-                background: `conic-gradient(
-                  #20c997 0% ${clearedPercent}%, 
-                  #fcc419 ${clearedPercent}% ${clearedPercent + pendingPercent}%, 
-                  #ff6b6b ${clearedPercent + pendingPercent}% 100%
-                )`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: 'var(--clay-shadow-out)',
-                marginBottom: '24px'
-              }}>
-                <div style={{
-                  width: '120px', height: '120px', borderRadius: '50%', background: '#fff',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: 'inset 0 4px 8px rgba(0,0,0,0.05)'
-                }}>
+              <div style={{ width: '180px', height: '180px', borderRadius: '50%', background: `conic-gradient(#20c997 0% ${clearedPercent}%, #fcc419 ${clearedPercent}% ${clearedPercent + pendingPercent}%, #ff6b6b ${clearedPercent + pendingPercent}% 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--clay-shadow-out)', marginBottom: '24px' }}>
+                <div style={{ width: '120px', height: '120px', borderRadius: '50%', background: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                   <span style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-dark)' }}>{stats.totalRequests}</span>
                   <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Total</span>
                 </div>
               </div>
-
-              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '4px', background: '#20c997' }} />
-                  Cleared ({stats.approvedRequests})
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '4px', background: '#fcc419' }} />
-                  Pending ({stats.pendingRequests})
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '4px', background: '#ff6b6b' }} />
-                  Rejected ({stats.rejectedRequests})
-                </div>
-              </div>
-
             </div>
           </Panel>
         </div>
@@ -445,9 +440,6 @@ const DepartmentPortal: React.FC = () => {
     );
   };
 
-  // ============================================================
-  // MAIN LAYOUT
-  // ============================================================
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-base)', fontFamily: 'var(--font-family)' }}>
       
@@ -458,7 +450,10 @@ const DepartmentPortal: React.FC = () => {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#fff', padding: '12px', borderRadius: '20px', boxShadow: 'var(--clay-shadow-out)', marginBottom: '24px' }}>
           <div style={{ width: '44px', height: '44px', background: '#e8eaf6', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>👨‍💼</div>
-          <div><span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)', display: 'block' }}>mamalinta</span><span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Department Head</span></div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)', lineHeight: 1.2 }}>{deptHead}</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>Department Head</span>
+          </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
           {[{ id: 'dashboard', label: 'Dashboard', icon: '🏠' }, { id: 'requests', label: 'Clearance Requests', icon: '📄' }, { id: 'approved', label: 'Approved List', icon: '✅' }, { id: 'reports', label: 'Reports', icon: '📊' }].map((item) => (
@@ -474,66 +469,63 @@ const DepartmentPortal: React.FC = () => {
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
           <div style={{ flex: 1, maxWidth: '400px' }}><SearchBox value={searchTerm} onChange={setSearchTerm} placeholder="Global Search..." /></div>
           
-          {/* ========================================================
-              FUNCTIONAL NOTIFICATION BELL DROPDOWN
-             ======================================================== */}
           <div ref={notifRef} style={{ position: 'relative' }}>
-            <button 
-              onClick={() => setIsNotifOpen(!isNotifOpen)} 
-              style={{ 
-                background: '#fff', border: 'none', width: '48px', height: '48px', borderRadius: '50%', 
-                boxShadow: 'var(--clay-shadow-out)', cursor: 'pointer', fontSize: '20px', 
-                display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' 
-              }}
-            >
+            <button onClick={() => setIsNotifOpen(!isNotifOpen)} style={{ background: '#fff', border: 'none', width: '48px', height: '48px', borderRadius: '50%', boxShadow: 'var(--clay-shadow-out)', cursor: 'pointer', fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
               🔔
-              {recentNotifications.length > 0 && (
-                <span style={{ position: 'absolute', top: '8px', right: '10px', width: '10px', height: '10px', background: '#ff4757', borderRadius: '50%', border: '2px solid #fff' }} />
-              )}
+              {recentNotifications.length > 0 && <span style={{ position: 'absolute', top: '8px', right: '10px', width: '10px', height: '10px', background: '#ff4757', borderRadius: '50%', border: '2px solid #fff' }} />}
             </button>
-            
             {isNotifOpen && (
-              <div style={{ 
-                position: 'absolute', top: '60px', right: 0, width: '320px', background: '#fff', 
-                borderRadius: '16px', padding: '16px', zIndex: 1000, boxShadow: '0 10px 30px rgba(0,0,0,0.1)', border: '1px solid #eee' 
-              }}>
+              <div style={{ position: 'absolute', top: '60px', right: 0, width: '320px', background: '#fff', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', padding: '16px', zIndex: 1000, border: '1px solid #eee' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #f0f0f0', paddingBottom: '12px' }}>
                   <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-dark)' }}>Notifications</h4>
-                  <span style={{ fontSize: '11px', color: 'var(--blue-primary)', fontWeight: 600, cursor: 'pointer' }}>Mark all read</span>
                 </div>
-
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
                   {recentNotifications.length === 0 ? (
-                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>No new notifications.</p>
+                    <p style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)' }}>No new notifications.</p>
                   ) : (
                     recentNotifications.map((notif, idx) => (
                       <div key={idx} style={{ display: 'flex', gap: '12px', padding: '10px', borderRadius: '8px', background: 'var(--bg-base)' }}>
                         <span style={{ fontSize: '18px' }}>{notif.icon}</span>
-                        <div>
-                          <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--text-dark)' }}>{notif.title}</p>
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{notif.time}</span>
-                        </div>
+                        <div><p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--text-dark)' }}>{notif.title}</p><span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{notif.time}</span></div>
                       </div>
                     ))
                   )}
                 </div>
-                
-                <button 
-                  onClick={() => { setIsNotifOpen(false); handleNavClick('requests'); }}
-                  style={{ width: '100%', marginTop: '12px', padding: '10px', borderRadius: '8px', border: 'none', background: 'var(--blue-light)', color: 'var(--blue-primary)', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}
-                >
-                  View All Requests
-                </button>
               </div>
             )}
           </div>
         </header>
-
         {activeTab === 'dashboard' && renderDashboard()}
         {activeTab === 'requests' && renderRequests()}
         {activeTab === 'approved' && renderApproved()}
         {activeTab === 'reports' && renderReports()}
       </main>
+
+      {isEditModalOpen && editingRequest && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(26, 34, 64, 0.4)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#fff', padding: '32px', borderRadius: 'var(--radius-lg)', width: '100%', maxWidth: '500px', boxShadow: 'var(--clay-shadow-hover)' }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '20px', color: 'var(--text-dark)' }}>Edit Clearance Request</h3>
+            <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '24px' }}>Editing request for <strong>{editingRequest.studentName}</strong></p>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>Status</label>
+              <select value={editStatus} onChange={(e) => setEditStatus(e.target.value as any)} style={{ width: '100%', padding: '12px 16px', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--bg-base)' }}>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>Remarks</label>
+              <textarea value={editRemark} onChange={(e) => setEditRemark(e.target.value)} style={{ width: '100%', minHeight: '100px', padding: '16px', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--bg-base)' }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <Button variant="ghost" onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
+              <Button variant="primary" onClick={handleSaveEdit}>Save Changes</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

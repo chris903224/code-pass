@@ -93,35 +93,26 @@ const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
-  // --- NAVIGATION STATE ---
   const [activeTab, setActiveTab] = useState<'dashboard' | 'departments' | 'students' | 'reports'>('dashboard');
 
-  // --- DATA STATES ---
+  // ============================================================
+  // FIX: GINAWANG 0 AT EMPTY ARRAYS LAHAT NG DATA
+  // ============================================================
   const [stats] = useState<DashboardStats>({
-    totalStudents: 120, totalRequests: 45, pendingRequests: 12, approvedRequests: 28, rejectedRequests: 5,
+    totalStudents: 0, 
+    totalRequests: 0, 
+    pendingRequests: 0, 
+    approvedRequests: 0, 
+    rejectedRequests: 0,
   });
   
-  // FIX: Cast to 'any[]' para hindi mag-error sa TS
-  const [requests] = useState<any[]>([
-    { id: '1', studentId: '2023-001', studentName: 'Alice Johnson', department: 'Library', status: 'pending', dateSubmitted: '2026-10-15' },
-    { id: '2', studentId: '2023-045', studentName: 'Bob Smith', department: 'IT Department', status: 'approved', dateSubmitted: '2026-10-14' },
-    { id: '3', studentId: '2022-112', studentName: 'Charlie Brown', department: 'Finance', status: 'rejected', dateSubmitted: '2026-10-10' },
-    { id: '4', studentId: '2024-008', studentName: 'Diana Prince', department: 'Registrar', status: 'pending', dateSubmitted: '2026-10-12' },
-    { id: '5', studentId: '2021-099', studentName: 'Evan Wright', department: 'IT Department', status: 'approved', dateSubmitted: '2026-10-08' },
-    { id: '6', studentId: '2021-100', studentName: 'Fiona G.', department: 'Library', status: 'approved', dateSubmitted: '2026-10-08' },
-  ]);
+  const [requests] = useState<any[]>([]);
   
-  const [announcements] = useState<Announcement[]>([
-    { id: '1', title: 'System Maintenance', content: 'System will be down on Sunday.', author: 'Admin', date: '2026-10-20' },
-  ]);
+  const [announcements] = useState<Announcement[]>([]);
 
   const [departments, setDepartments] = useState<Department[]>(() => {
     const saved = localStorage.getItem('admin_departments');
-    return saved ? JSON.parse(saved) : [
-      { id: '1', name: 'IT Department', head: 'Dr. Reyes', status: 'Active' },
-      { id: '2', name: 'Education Department', head: 'Dr. Cruz', status: 'Active' },
-      { id: '3', name: 'Criminology', head: 'Dr. Santos', status: 'Active' },
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   useEffect(() => {
@@ -130,11 +121,7 @@ const AdminDashboard: React.FC = () => {
 
   const [students, setStudents] = useState<Student[]>(() => {
     const saved = localStorage.getItem('admin_students');
-    return saved ? JSON.parse(saved) : [
-      { id: '1', studentId: '2023-001', name: 'Alice Johnson', course: 'BSIT', status: 'Pending' },
-      { id: '2', studentId: '2023-045', name: 'Bob Smith', course: 'BSED', status: 'Approved' },
-      { id: '3', studentId: '2022-112', name: 'Charlie Brown', course: 'CRIM', status: 'Rejected' },
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   useEffect(() => {
@@ -186,21 +173,13 @@ const AdminDashboard: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ============================================================
-  // HANDLERS
-  // ============================================================
   const handleLogout = async () => {
     if (window.confirm("Are you sure you want to log out?")) {
       try {
         if (logout) await logout();
-        else {
-          localStorage.removeItem('token'); 
-          localStorage.removeItem('user');
-        }
+        localStorage.clear(); sessionStorage.clear();
         navigate('/login', { replace: true });
-      } catch (error) {
-        console.error("Logout failed:", error);
-      }
+      } catch (error) { console.error("Logout failed:", error); }
     }
   };
 
@@ -258,6 +237,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   const handleExportSystemReport = () => {
+    if (requests.length === 0 && departments.length === 0 && students.length === 0) return alert("No data available to export.");
     const summaryData = [
       ['System Clearance Report', ''], ['Generated On', new Date().toLocaleString()], ['', ''],
       ['SYSTEM TOTALS', ''], ['Total Students', stats.totalStudents], ['Total Requests', stats.totalRequests],
@@ -272,9 +252,6 @@ const AdminDashboard: React.FC = () => {
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
   };
 
-  // ============================================================
-  // DERIVED DATA & FILTERING
-  // ============================================================
   const filteredRequests = requests.filter((req: any) => {
     const matchSearch = req.studentId?.includes(searchTerm) || req.studentName?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchStatus = statusFilter === 'all' || req.status === statusFilter;
@@ -301,9 +278,6 @@ const AdminDashboard: React.FC = () => {
 
   if (isLoading) return <div className="loading-container" style={{ height: '100vh' }}><div className="spinner"></div></div>;
 
-  // ============================================================
-  // VIEWS
-  // ============================================================
   const renderDashboard = () => (
     <>
       <section className="hero" style={{ marginBottom: '24px' }}>
@@ -337,15 +311,22 @@ const AdminDashboard: React.FC = () => {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <Panel title="📢 Recent Announcements">
-            {announcements.map((announcement: Announcement) => (
-              <div key={announcement.id} style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #eee' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--blue-primary)' }}>{announcement.author}</span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{announcement.date}</span>
-                </div>
-                <p style={{ fontSize: '13px', color: 'var(--text-dark)', lineHeight: 1.5 }}><strong>{announcement.title}</strong><br />{announcement.content}</p>
+            {announcements.length === 0 ? (
+              <div className="panel-empty" style={{ textAlign: 'center', padding: '40px 0' }}>
+                <span className="empty-icon" style={{ fontSize: '32px' }}>📭</span>
+                <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>No announcements available.</p>
               </div>
-            ))}
+            ) : (
+              announcements.map((announcement: Announcement) => (
+                <div key={announcement.id} style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #eee' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--blue-primary)' }}>{announcement.author}</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{announcement.date}</span>
+                  </div>
+                  <p style={{ fontSize: '13px', color: 'var(--text-dark)', lineHeight: 1.5 }}><strong>{announcement.title}</strong><br />{announcement.content}</p>
+                </div>
+              ))
+            )}
           </Panel>
         </div>
       </div>
@@ -389,9 +370,6 @@ const AdminDashboard: React.FC = () => {
     </>
   );
 
-  // ============================================================
-  // REPORTS VIEW (WITH CHARTS)
-  // ============================================================
   const renderReports = () => {
     const totalRequests = requests.length || 1;
     const pendingCount = requests.filter(r => r.status === 'pending').length;
@@ -406,8 +384,6 @@ const AdminDashboard: React.FC = () => {
       acc[req.department] = (acc[req.department] || 0) + 1;
       return acc;
     }, {});
-    
-    // FIX: Cast to number[] para mawala ang 'unknown' error
     const maxDeptCount = Math.max(...(Object.values(deptCounts) as number[]), 1);
 
     return (
@@ -423,7 +399,7 @@ const AdminDashboard: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px 0' }}>
               <div style={{
                 width: '180px', height: '180px', borderRadius: '50%',
-                background: `conic-gradient(
+                background: requests.length === 0 ? '#f0f0f0' : `conic-gradient(
                   #fcc419 0% ${pendingPct}%, 
                   #20c997 ${pendingPct}% ${pendingPct + approvedPct}%, 
                   #ff6b6b ${pendingPct + approvedPct}% 100%
@@ -440,36 +416,22 @@ const AdminDashboard: React.FC = () => {
                   <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Total</span>
                 </div>
               </div>
-
-              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '4px', background: '#fcc419' }} /> Pending ({pendingCount})
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '4px', background: '#20c997' }} /> Approved ({approvedCount})
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '4px', background: '#ff6b6b' }} /> Rejected ({rejectedCount})
-                </div>
-              </div>
             </div>
           </Panel>
 
           <Panel title="Department Performance">
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', height: '250px', padding: '0 20px', marginTop: '20px' }}>
-              {Object.entries(deptCounts).map(([dept, count]: any) => (
-                <div key={dept} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '60px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 600, marginBottom: '8px' }}>{count}</span>
-                  <div style={{ 
-                    width: '100%', 
-                    height: `${(count / maxDeptCount) * 180}px`, 
-                    background: 'linear-gradient(180deg, #4c6ef5, #3b5bdb)', 
-                    borderRadius: '8px 8px 0 0',
-                    boxShadow: '0 4px 10px rgba(59, 91, 219, 0.3)'
-                  }} />
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', fontWeight: 600, textAlign: 'center', wordBreak: 'break-word' }}>{dept}</span>
-                </div>
-              ))}
+              {Object.keys(deptCounts).length === 0 ? (
+                <div style={{ color: 'var(--text-muted)' }}>No data available</div>
+              ) : (
+                Object.entries(deptCounts).map(([dept, count]: any) => (
+                  <div key={dept} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '60px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 600, marginBottom: '8px' }}>{count}</span>
+                    <div style={{ width: '100%', height: `${(count / maxDeptCount) * 180}px`, background: 'linear-gradient(180deg, #4c6ef5, #3b5bdb)', borderRadius: '8px 8px 0 0' }} />
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', fontWeight: 600, textAlign: 'center', wordBreak: 'break-word' }}>{dept}</span>
+                  </div>
+                ))
+              )}
             </div>
           </Panel>
 
@@ -478,9 +440,6 @@ const AdminDashboard: React.FC = () => {
     );
   };
 
-  // ============================================================
-  // MAIN LAYOUT
-  // ============================================================
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-base)', fontFamily: 'var(--font-family)' }}>
       

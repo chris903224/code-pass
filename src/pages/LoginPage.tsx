@@ -8,6 +8,8 @@ import Brand from '../components/layout/Brand';
 
 const LoginPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
+  const [userType, setUserType] = useState<'student' | 'department' | 'admin'>('student'); // Kailangan ito
+  
   const { isAuthenticated, user, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -28,51 +30,45 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="page-shell">
-      {/* Animated ambient blobs */}
       <div className="bg-blob blob-1" aria-hidden="true" />
       <div className="bg-blob blob-2" aria-hidden="true" />
       <div className="bg-blob blob-3" aria-hidden="true" />
 
       <div className="login-container">
-        {/* LEFT SIDE - GLASS PANEL */}
         <div className="login-left">
           <div className="glass-sheen" aria-hidden="true" />
-          <div className="brand-wrapper">
-            <Brand />
-          </div>
-
+          <div className="brand-wrapper"><Brand /></div>
           <div className="brand-message">
             <h2>Track, Submit, and Complete Your Clearance Online.</h2>
-            <p className="brand-sub">
-              A seamless clearance workflow — built for students, departments, and admins.
-            </p>
+            <p className="brand-sub">A seamless clearance workflow — built for students, departments, and admins.</p>
           </div>
-
           <div className="brand-features">
-            <div className="feature-item">
-              <span className="feature-icon">📝</span>
-              <span>Submit Request</span>
-            </div>
-            <div className="feature-item">
-              <span className="feature-icon">📊</span>
-              <span>Track Progress</span>
-            </div>
-            <div className="feature-item">
-              <span className="feature-icon">✅</span>
-              <span>Get Cleared</span>
-            </div>
+            <div className="feature-item"><span className="feature-icon">📝</span><span>Submit Request</span></div>
+            <div className="feature-item"><span className="feature-icon">📊</span><span>Track Progress</span></div>
+            <div className="feature-item"><span className="feature-icon">✅</span><span>Get Cleared</span></div>
           </div>
         </div>
 
-        {/* RIGHT SIDE - NEUMORPHIC SURFACE */}
         <div className="login-right">
-          <div className="login-form-wrapper">
+          <div className="login-form-wrapper" style={{ position: 'relative' }}>
+            
+            {/* Role Switcher */}
+            <div style={{
+              position: 'absolute', top: '-50px', right: '0', display: 'flex', gap: '4px',
+              background: 'var(--bg-base)', padding: '4px', borderRadius: 'var(--radius-pill)', boxShadow: 'var(--clay-shadow-in)'
+            }}>
+              <button onClick={() => setUserType('student')} style={{ padding: '8px 16px', borderRadius: 'var(--radius-pill)', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600, background: userType === 'student' ? '#fff' : 'transparent', color: userType === 'student' ? 'var(--blue-primary)' : 'var(--text-muted)', boxShadow: userType === 'student' ? 'var(--clay-shadow-out)' : 'none', transition: 'all 0.2s' }}>🎓 Student</button>
+              <button onClick={() => setUserType('department')} style={{ padding: '8px 16px', borderRadius: 'var(--radius-pill)', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600, background: userType === 'department' ? '#fff' : 'transparent', color: userType === 'department' ? 'var(--blue-primary)' : 'var(--text-muted)', boxShadow: userType === 'department' ? 'var(--clay-shadow-out)' : 'none', transition: 'all 0.2s' }}>🏛️ Department</button>
+              <button onClick={() => setUserType('admin')} style={{ padding: '8px 16px', borderRadius: 'var(--radius-pill)', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600, background: userType === 'admin' ? '#fff' : 'transparent', color: userType === 'admin' ? 'var(--blue-primary)' : 'var(--text-muted)', boxShadow: userType === 'admin' ? 'var(--clay-shadow-out)' : 'none', transition: 'all 0.2s' }}>👑 Admin</button>
+            </div>
+
             <AuthToggle activeTab={activeTab} onTabChange={setActiveTab} />
 
+            {/* Tiyakin na may userType prop ang Register */}
             {activeTab === 'login' ? (
-              <Login onSuccess={() => {}} />
+              <Login onSuccess={() => {}} userType={userType} />
             ) : (
-              <Register onSuccess={() => {}} />
+              <Register onSuccess={() => {}} userType={userType} />
             )}
 
             <div className="login-footer">

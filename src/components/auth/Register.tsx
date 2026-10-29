@@ -1,228 +1,189 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import type { UserType } from '../../types';
-import UserTypeSelector from './UserTypeSelector';
-import Input from '../common/Input';
-import Button from '../common/Button';
 
 interface RegisterProps {
-  onSuccess?: () => void;
+  onSuccess: () => void;
+  userType: 'student' | 'department' | 'admin';
 }
 
-const Register: React.FC<RegisterProps> = ({ onSuccess }) => {
-  // ============================================================
-  // STATE
-  // ============================================================
-  const { register, loading } = useAuth();
-  const [userType, setUserType] = useState<UserType>('student');
+// Listahan ng mga pwedeng piliin na Department
+const SYSTEM_DEPARTMENTS = [
+  'Library',
+  'Finance',
+  'IT Department',
+  'Registrar',
+  'Student Affairs',
+  'Guidance Office'
+];
+
+const Register: React.FC<RegisterProps> = ({ onSuccess, userType }) => {
   const [formData, setFormData] = useState({
     fullName: '',
-    username: '',
     email: '',
+    studentId: '',
+    departmentName: '', // Ito ang gagamitin natin para sa Dropdown
     password: '',
-    confirmPassword: '',
+    confirmPassword: ''
   });
-  const [agreeTerms, setAgreeTerms] = useState(false);
-  const [error, setError] = useState<string>('');
-  const [showPassword, setShowPassword] = useState(false);
+  
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { register } = useAuth();
 
-  // ============================================================
-  // HANDLERS
-  // ============================================================
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setError('');
-  };
-
-  const validateForm = (): boolean => {
-    if (!formData.fullName.trim()) {
-      setError('Full name is required');
-      return false;
-    }
-
-    if (!formData.username.trim()) {
-      setError('Username is required');
-      return false;
-    }
-    if (formData.username.length < 3) {
-      setError('Username must be at least 3 characters');
-      return false;
-    }
-
-    if (!formData.email.trim()) {
-      setError('Email is required');
-      return false;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setError('Please enter a valid email address');
-      return false;
-    }
-
-    if (!formData.password) {
-      setError('Password is required');
-      return false;
-    }
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters');
-      return false;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return false;
-    }
-
-    if (!agreeTerms) {
-      setError('Please agree to the Terms & Conditions');
-      return false;
-    }
-
-    return true;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    if (!validateForm()) {
-      return;
+    
+    if (formData.password !== formData.confirmPassword) {
+      return setError('Passwords do not match');
     }
 
+    setIsLoading(true);
     try {
-      await register({
-        fullName: formData.fullName,
-        username: formData.username,
-        email: formData.email,
-        password: formData.password,
-        confirmPassword: formData.confirmPassword,
-        userType,
-      });
-
-      if (onSuccess) {
-        onSuccess();
-      }
-    } catch (err) {
-      setError('Registration failed. Please try again.');
-      console.error('Registration error:', err);
+      // Ipapasa natin ang formData kasama ang userType
+      await register({ ...formData, userType } as any);
+      onSuccess();
+    } catch (err: any) {
+      setError(err.message || 'Registration failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const togglePasswordVisibility = () => {
-    setShowPassword((prev) => !prev);
-  };
-
-  // ============================================================
-  // RENDER
-  // ============================================================
   return (
-    <div className="register-form-container">
-      <div className="login-header">
-        <h2>Create Account</h2>
-        <p>Register to start using Clear Pass.</p>
+    <div className="auth-form-container" style={{ animation: 'fadeInUp 0.4s ease-out' }}>
+      <div className="login-header" style={{ marginBottom: '24px' }}>
+        <h2>Create an Account</h2>
+        <p>Join Clear Pass today.</p>
       </div>
 
-      <UserTypeSelector
-        selectedType={userType}
-        onSelect={setUserType}
-        isRegister
-        disabled={loading}
-      />
-
-      <form onSubmit={handleSubmit} className="auth-form" noValidate>
-        <Input
-          id="fullName"
-          name="fullName"
-          label="Full Name"
-          type="text"
-          icon="👤"
-          placeholder="Enter your full name"
-          value={formData.fullName}
-          onChange={handleChange}
-          disabled={loading}
-          required
-        />
-
-        <Input
-          id="username"
-          name="username"
-          label="Username / ID"
-          type="text"
-          icon="🆔"
-          placeholder="Choose a username or ID"
-          value={formData.username}
-          onChange={handleChange}
-          disabled={loading}
-          required
-        />
-
-        <Input
-          id="email"
-          name="email"
-          label="Email Address"
-          type="email"
-          icon="📧"
-          placeholder="Enter your email address"
-          value={formData.email}
-          onChange={handleChange}
-          disabled={loading}
-          required
-        />
-
-        <Input
-          id="password"
-          name="password"
-          label="Password"
-          type={showPassword ? 'text' : 'password'}
-          icon="🔒"
-          placeholder="Create a password (min. 8 characters)"
-          value={formData.password}
-          onChange={handleChange}
-          disabled={loading}
-          required
-          minLength={8}
-          showToggle
-          onTogglePassword={togglePasswordVisibility}
-        />
-
-        <Input
-          id="confirmPassword"
-          name="confirmPassword"
-          label="Confirm Password"
-          type={showPassword ? 'text' : 'password'}
-          icon="🔐"
-          placeholder="Confirm your password"
-          value={formData.confirmPassword}
-          onChange={handleChange}
-          disabled={loading}
-          required
-        />
-
-        <div className="form-options">
-          <label className="remember-me">
-            <input
-              type="checkbox"
-              checked={agreeTerms}
-              onChange={(e) => setAgreeTerms(e.target.checked)}
-              disabled={loading}
+      <form className="auth-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        
+        {/* FULL NAME */}
+        <div className="form-group">
+          <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '8px', display: 'block' }}>Full Name <span style={{color: 'var(--color-danger)'}}>*</span></label>
+          <div className="input-wrapper">
+            <span className="input-icon">👤</span>
+            <input 
+              type="text" 
+              name="fullName" 
+              value={formData.fullName} 
+              onChange={handleChange} 
+              placeholder="Enter your full name" 
+              required 
             />
-            <span className="checkmark"></span>
-            I agree to the <a href="#" className="terms-link">Terms &amp; Conditions</a>
-          </label>
+          </div>
         </div>
 
-        {error && <div className="form-error">{error}</div>}
+        {/* EMAIL */}
+        <div className="form-group">
+          <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '8px', display: 'block' }}>Email Address <span style={{color: 'var(--color-danger)'}}>*</span></label>
+          <div className="input-wrapper">
+            <span className="input-icon">📧</span>
+            <input 
+              type="email" 
+              name="email" 
+              value={formData.email} 
+              onChange={handleChange} 
+              placeholder="Enter your email" 
+              required 
+            />
+          </div>
+        </div>
 
-        <Button
-          type="submit"
-          variant="primary"
-          isLoading={loading}
-          disabled={loading}
-          className="signin-btn"
-        >
-          {loading ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT'}
-        </Button>
+        {/* CONDITIONAL FIELDS base sa UserType */}
+        
+        {/* Kung Student, ipakita ang Student ID */}
+        {userType === 'student' && (
+          <div className="form-group">
+            <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '8px', display: 'block' }}>Student ID <span style={{color: 'var(--color-danger)'}}>*</span></label>
+            <div className="input-wrapper">
+              <span className="input-icon">🎓</span>
+              <input 
+                type="text" 
+                name="studentId" 
+                value={formData.studentId} 
+                onChange={handleChange} 
+                placeholder="Enter your Student ID" 
+                required 
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Kung Department, ipakita ang DROPDOWN ng Departments */}
+        {userType === 'department' && (
+          <div className="form-group">
+            <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '8px', display: 'block' }}>Department Name <span style={{color: 'var(--color-danger)'}}>*</span></label>
+            <div className="input-wrapper" style={{ padding: 0, overflow: 'hidden' }}>
+              <span className="input-icon" style={{ padding: '0 12px 0 16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🏛️</span>
+              <select 
+                name="departmentName" 
+                value={formData.departmentName} 
+                onChange={handleChange} 
+                required
+                style={{
+                  width: '100%', padding: '14px 16px', border: 'none', background: 'transparent',
+                  fontFamily: 'var(--font-family)', fontSize: '14px', color: 'var(--text-dark)', outline: 'none', cursor: 'pointer',
+                  WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none'
+                }}
+              >
+                <option value="" disabled>Select a Department</option>
+                {SYSTEM_DEPARTMENTS.map((dept) => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
+              </select>
+              {/* Custom Arrow Icon for Dropdown */}
+              <span style={{ paddingRight: '16px', color: 'var(--text-muted)' }}>▼</span>
+            </div>
+          </div>
+        )}
+
+        {/* PASSWORD */}
+        <div className="form-group">
+          <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '8px', display: 'block' }}>Password <span style={{color: 'var(--color-danger)'}}>*</span></label>
+          <div className="input-wrapper">
+            <span className="input-icon">🔒</span>
+            <input 
+              type="password" 
+              name="password" 
+              value={formData.password} 
+              onChange={handleChange} 
+              placeholder="Create a password" 
+              required 
+            />
+          </div>
+        </div>
+
+        {/* CONFIRM PASSWORD */}
+        <div className="form-group">
+          <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '8px', display: 'block' }}>Confirm Password <span style={{color: 'var(--color-danger)'}}>*</span></label>
+          <div className="input-wrapper">
+            <span className="input-icon">🔒</span>
+            <input 
+              type="password" 
+              name="confirmPassword" 
+              value={formData.confirmPassword} 
+              onChange={handleChange} 
+              placeholder="Confirm your password" 
+              required 
+            />
+          </div>
+        </div>
+
+        {error && (
+          <div className="form-error" style={{ background: 'var(--color-danger-bg)', color: 'var(--color-danger)', padding: '12px', borderRadius: '8px', fontSize: '13px', textAlign: 'center', fontWeight: 600 }}>
+            {error}
+          </div>
+        )}
+
+        <button type="submit" className="btn btn-primary" disabled={isLoading} style={{ padding: '16px', fontSize: '16px', letterSpacing: '1px', marginTop: '8px' }}>
+          {isLoading ? 'CREATING ACCOUNT...' : 'REGISTER'}
+        </button>
       </form>
     </div>
   );
